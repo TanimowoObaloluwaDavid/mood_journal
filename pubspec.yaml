@@ -1,0 +1,45 @@
+name: mood_journal
+description: "A private, offline-first journal with mood tracking, streaks and insights."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Database
+  drift: 2.34.4
+  sqlite3: ^3.5.2
+  path: ^1.9.0
+  path_provider: ^2.1.5
+
+  # Crypto
+  cryptography: ^2.7.0
+  flutter_secure_storage: ^11.2.0
+
+  # Charts
+  fl_chart: ^0.69.2
+
+  # Utils
+  intl: ^0.20.2
+  uuid: ^4.5.1
+  collection: ^1.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  drift_dev: 2.34.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true

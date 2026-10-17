@@ -1,0 +1,38 @@
+# Static analysis configuration for this project.
+#
+# `flutter analyze --fatal-infos` runs in CI, so anything below must stay clean.
+# See CONTRIBUTING.md for the conventions these rules protect.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # An unused import is a symptom, not a nuisance. Never ship one.
+    unused_import: error
+    # Dead code in a project this size is always a mistake, never intent.
+    unused_local_variable: error
+
+linter:
+  rules:
+    # --- Correctness -------------------------------------------------------
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    cancel_subscriptions: true
+    close_sinks: true
+    unawaited_futures: true
+    use_build_context_synchronously: true
+
+    # --- Consistency -------------------------------------------------------
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    require_trailing_commas: true
+    sort_constructors_first: true
+    unnecessary_parenthesis: true
+    use_super_parameters: true
+    directives_ordering: true
+
+    # --- Flutter-specific --------------------------------------------------
+    # Never leave a stray print() in a journal app.
+    avoid_print: true
