@@ -25,26 +25,25 @@ calendar, the charts, the streaks — is just history derived from those taps.
 
 ## Screens
 
-> [!NOTE]
-> Screenshots are not committed yet. To add them, drop PNGs into
-> `docs/screens/` and reference them below:
->
-> ```markdown
-> | Home | Editor | Calendar | Insights |
-> |---|---|---|---|
-> | ![Home](docs/screens/home.png) | ![Editor](docs/screens/editor.png) | ![Calendar](docs/screens/calendar.png) | ![Insights](docs/screens/insights.png) |
-> ```
->
-> Capture at 390×844 with `flutter run` and a seeded database to show real content.
+Captured from the real app running in a browser — `flutter build web`, then
+headless Chrome over the DevTools Protocol. See [`tool/`](tool) for the
+scripting.
 
-| Screen | What it answers |
-|---|---|
-| **Journal** | How do I feel right now, and what is in my history? |
-| **Editor** | What do I want to say about today? |
-| **Calendar** | When have I been consistent? 26 weeks of mood at a glance. |
-| **Insights** | Is my mood actually improving? Which weekdays are hardest? |
-| **Search** | Where did I write about X? |
-| **Settings** | How private is this, and how do I get my data out? |
+| Journal | Calendar | Insights |
+|---|---|---|
+| ![Journal](docs/screens/01_home.png) | ![Calendar](docs/screens/02_calendar.png) | ![Insights](docs/screens/03_insights.png) |
+
+| Editor | Search | Settings |
+|---|---|---|
+| ![Editor](docs/screens/06_editor.png) | ![Search](docs/screens/04_search.png) | ![Settings](docs/screens/05_settings.png) |
+
+<details>
+<summary>▶ Demo video</summary>
+
+![Demo](docs/demo.gif)
+
+</details>
+
 
 ## Features
 
@@ -56,6 +55,8 @@ calendar, the charts, the streaks — is just history derived from those taps.
   backing out never loses the last sentence.
 - **Debounced search** (150 ms) over entry text and tags.
 - **AES-256-GCM encryption** for entry text, with the key in the platform keystore.
+- **Runs on the web as well as mobile** — SQLite compiled to WASM, same code
+  path, no second implementation to keep in sync.
 - **Export to JSON** via the clipboard.
 - **Accessible by construction** — see [Accessibility](#accessibility) below.
 
@@ -79,6 +80,22 @@ widget tree.
 | Charts | `fl_chart` | Small, no web-canvas dependency |
 | Ids | `uuid`, generated client-side | Autosave has a target from the first keystroke |
 
+### One database, two platforms
+
+`lib/data/local/connection/` picks an implementation at compile time via a
+conditional export, so there is exactly one set of queries and models:
+
+| Target | Implementation |
+|---|---|
+| Android, iOS, Windows, macOS, Linux | `NativeDatabase` on a background isolate |
+| Web | `WasmDatabase` — SQLite compiled to WASM, in a worker |
+
+Anything else fails loudly at startup rather than silently losing entries.
+
+On the web, drift uses OPFS when the page is cross-origin isolated (COOP/COEP
+headers) and falls back to IndexedDB when it isn't, so a plain static deploy
+still works — just slower on large databases. `tool/serve.js` sets those headers.
+
 ### Project structure
 
 ```
@@ -91,15 +108,28 @@ lib/
 │   ├── models/{mood, journal_entry, stats, insights_bundle, app_settings}.dart
 │   └── repositories/journal_repository.dart
 ├── data/
-│   ├── local/{app_database.dart, tables.dart, crypto_service.dart}
+│   ├── local/
+│   │   ├── app_database.dart
+│   │   ├── tables.dart
+│   │   ├── crypto_service.dart
+│   │   └── connection/            ← native / web / stub, picked at compile time
 │   └── repositories/drift_journal_repository.dart
 └── presentation/
     ├── providers.dart           ← every provider in one place
     ├── router.dart
+    ├── app.dart
+    ├── error_log.dart           ← last 100 unhandled errors
+    ├── demo_seed.dart           ← sample data, opt-in via --dart-define
     ├── screens/                 ← home, editor, calendar, insights, search, settings
     └── widgets/                 ← mood_picker, entry_card, streak_banner, empty_state
-```
 
+tool/                            ← how the screenshots were made
+├── serve.js                     ← static server, correct WASM MIME + COOP/COEP
+├── capture_web.js               ← headless Chrome over the DevTools Protocol
+├── encode_video.js              ← frames → mp4 + gif, via ffmpeg
+├── debug_web.js                 ← console/error dump for a blank build
+└── notify.ps1                   ← Windows toast when a long job finishes
+```
 ## Getting started
 
 ```bash
@@ -110,19 +140,53 @@ flutter run
 
 Requires Flutter 3.41+ / Dart 3.11+.
 
+### Running it in a browser
+
+```bash
+flutter run -d chrome
+```
+
+Or serve a release build:
+
+```bash
+flutter build web --release
+node tool/serve.js 8099 build/web
+```
+
+The web build needs two files that are committed here: `web/sqlite3.wasm`, and
+`web/drift_worker.dart.js`. Recompile the worker after editing its source:
+
+```bash
+dart compile js -O4 web/drift_worker.dart -o web/drift_worker.dart.js
+```
+
+### Regenerating the screenshots
+
+```bash
+flutter build web --release --dart-define=DEMO_DATA=true
+node tool/serve.js 8099 build/web          # leave running in another terminal
+node tool/capture_web.js --out docs/screens --video
+node tool/encode_video.js
+```
+
+`--dart-define=DEMO_DATA=true` seeds ~11 weeks of sample entries so the captures
+show a used app rather than an empty one. It is a compile-time flag, so the
+seeder is tree-shaken out of ordinary builds entirely.
+
 ## Tests
 
 ```bash
 flutter test
 ```
 
-58 tests, all passing.
+64 tests, all passing.
 
 | Suite | Tests | Covers |
 |---|---|---|
 | `test/streak_test.dart` | 21 | Streak edge cases, DST-aware day bucketing, word counting, mood mapping |
 | `test/journal_repository_test.dart` | 30 | Every query against an in-memory database, the encryption round-trip, tag handling |
 | `test/mood_picker_test.dart` | 7 | Rendering, tap targets, and screen-reader labels |
+| `test/journal_entry_test.dart` | 6 | Title derivation and list-row preview behaviour |
 
 The repository tests use an in-memory `NativeDatabase` and a fake `SecretStore`, so
 the envelope format is exercised for real without needing platform channels.
@@ -178,7 +242,10 @@ Not built yet, and tracked honestly:
 - [ ] **Passcode lock screen** — setting persists; the gate itself is not built
 - [ ] **JSON import** — needs a conflict-merge policy before it is safe
 - [ ] **Secondary moods** — the schema already supports "great but anxious"
-- [ ] **iOS / web verification** — code is written, but only Android was built
+- [x] ~~Web~~ — done, via a compile-time conditional database opener
+
+The 2 000-entry 60 fps target in `SPEC.md` §7 is still unmeasured; it needs a
+physical device.
 
 ## Contributing
 

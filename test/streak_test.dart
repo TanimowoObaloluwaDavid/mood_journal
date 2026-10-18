@@ -121,8 +121,7 @@ void main() {
     });
   });
 
-  group('Mood', () {
-    test('fromValue returns null for out-of-range data', () {
+  group('Mood', () {    test('fromValue returns null for out-of-range data', () {
       expect(Mood.fromValue(0), isNull);
       expect(Mood.fromValue(6), isNull);
       expect(Mood.fromValue(null), isNull);

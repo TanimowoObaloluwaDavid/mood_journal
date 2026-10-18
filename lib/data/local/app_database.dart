@@ -1,17 +1,13 @@
-import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
+import 'connection/connection.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [JournalEntries, MoodTags, Tags, EntryTags, AppSettingsTable])
 class AppDatabase extends _$AppDatabase {
-  AppDatabase() : super(_openConnection());
+  AppDatabase() : super(openConnection());
 
   /// Used by tests, backed by an in-memory database.
   AppDatabase.forTesting(super.executor);
@@ -40,21 +36,4 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
-}
-
-LazyDatabase _openConnection() {
-  return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'mood_journal.sqlite'));
-
-    return NativeDatabase.createInBackground(
-      file,
-      // WAL lets the debounced autosave write proceed without blocking the
-      // timeline read that follows it.
-      setup: (database) {
-        database.execute('PRAGMA journal_mode = WAL;');
-        database.execute('PRAGMA synchronous = NORMAL;');
-      },
-    );
-  });
 }

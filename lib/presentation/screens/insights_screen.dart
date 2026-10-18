@@ -198,11 +198,28 @@ class _MoodTrendChart extends StatelessWidget {
                 if (index < 0 || index >= visible.length) {
                   return const SizedBox.shrink();
                 }
+
+                // The first and last labels are centred on the plot's edges,
+                // so half of each would be clipped. Anchoring them inward
+                // inside a fixed-width box keeps them fully readable.
+                final isFirst = index == 0;
+                final isLast = index == visible.length - 1;
+
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    DateFormat('d MMM').format(visible[index].date),
-                    style: Theme.of(context).textTheme.labelSmall,
+                  child: SizedBox(
+                    width: 48,
+                    child: Align(
+                      alignment: isFirst
+                          ? Alignment.centerLeft
+                          : isLast
+                              ? Alignment.centerRight
+                              : Alignment.center,
+                      child: Text(
+                        DateFormat('d MMM').format(visible[index].date),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
                   ),
                 );
               },

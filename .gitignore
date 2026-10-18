@@ -79,6 +79,13 @@ Desktop.ini
 # Web build output
 /web/build/
 
+# Compiled drift worker: `web/drift_worker.dart.js` IS committed because the
+# web build loads it at runtime. Only its debug artefacts are ignored.
+web/drift_worker.dart.js.deps
+web/drift_worker.dart.js.map
+web/*.dart.js.deps
+web/*.dart.js.map
+
 # Logs and reports
 *.log
 npm-debug.log*

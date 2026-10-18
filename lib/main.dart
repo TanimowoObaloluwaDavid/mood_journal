@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'presentation/app.dart';
+import 'presentation/demo_seed.dart';
 import 'presentation/error_log.dart';
+import 'presentation/providers.dart';
 
 Future<void> main() async {
   // WidgetsFlutterBinding must exist before anything touches a platform
@@ -21,6 +23,14 @@ Future<void> main() async {
     errorLog.add('$error\n$stack');
     return true;
   };
+
+  // Demo builds only. Tree-shaken out entirely unless DEMO_DATA=true, so a
+  // release build never ships sample entries.
+  if (DemoSeeder.enabled) {
+    final container = ProviderContainer();
+    await DemoSeeder.seed(container.read(journalRepositoryProvider));
+    container.dispose();
+  }
 
   runApp(
     ProviderScope(

@@ -41,6 +41,14 @@ class JournalEntry {
 
   bool get isEmpty => body.trim().isEmpty && tags.isEmpty;
 
+  /// True when the user set a title of their own, as opposed to one derived
+  /// from the body by [displayTitle].
+  ///
+  /// List rows use this to decide whether to show a body preview: when the
+  /// title *is* the opening of the body, previewing the body underneath just
+  /// prints the same sentence twice.
+  bool get hasExplicitTitle => title?.trim().isNotEmpty ?? false;
+
   /// A human-readable heading. Falls back to the first few words of the body,
   /// so a list never shows a wall of empty titles.
   String get displayTitle {

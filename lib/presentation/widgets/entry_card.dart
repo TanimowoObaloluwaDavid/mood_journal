@@ -82,7 +82,11 @@ class EntryCard extends StatelessWidget {
                             .bodyLarge
                             ?.copyWith(fontWeight: FontWeight.w600, height: 1.3),
                       ),
-                      if (entry.body.trim().isNotEmpty) ...[
+                      // Only preview the body when it adds something. When
+                      // there is no explicit title, `displayTitle` is already
+                      // the opening of the body, and showing both would print
+                      // the same words twice.
+                      if (entry.hasExplicitTitle && entry.body.trim().isNotEmpty) ...[
                         const SizedBox(height: 3),
                         Text(
                           entry.body.trim(),
